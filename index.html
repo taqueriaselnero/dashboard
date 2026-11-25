@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Dashboard GrupoNero</title>
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--ink:#1d1d1b;--mut:#6b6a65;--line:#e4e2dc;--acc:#b5381f;--acc2:#1f6f8b;--ok:#2d7a4f}
+@media (prefers-color-scheme:dark){:root{--bg:#161614;--card:#1f1f1c;--ink:#f0eee8;--mut:#a09e96;--line:#33322d;--acc:#e0654b;--acc2:#5bb0cf;--ok:#6cc08f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0}
+h2{font-size:15px;margin:0 0 10px;font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.login{max-width:360px;margin:12vh auto}
+.login .card{display:grid;gap:10px}
+label{font-size:13px;color:var(--mut);display:grid;gap:4px}
+input,select,button{font:inherit;color:var(--ink)}
+input,select{padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);width:100%}
+button{padding:9px 14px;border:0;border-radius:8px;background:var(--acc);color:#fff;cursor:pointer;font-weight:600}
+button.sec{background:transparent;color:var(--mut);font-weight:500;padding:4px 0;text-align:left}
+button:disabled{opacity:.5;cursor:wait}
+.msg{font-size:13px;min-height:18px}
+.err{color:var(--acc)}.okm{color:var(--ok)}
+header.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+header.top .who{font-size:13px;color:var(--mut);display:flex;gap:10px;align-items:center}
+header.top .who button{background:transparent;color:var(--mut);border:1px solid var(--line);padding:5px 10px;font-weight:500}
+.filters{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.filters label{min-width:160px;flex:1}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:14px}
+.kpi .v{font-size:24px;font-weight:700;letter-spacing:-.5px}
+.kpi .l{font-size:12px;color:var(--mut)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.full{grid-column:1/-1}
+.ch{position:relative;height:280px}
+.note{font-size:12px;color:var(--mut);margin-top:12px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Acceso -->
+  <section id="vLogin" class="login" hidden>
+    <h1 style="margin-bottom:12px">Dashboard GrupoNero</h1>
+    <form id="fLogin" class="card">
+      <label>Correo<input id="email" type="email" autocomplete="username" required></label>
+      <label>Contraseña<input id="pass" type="password" autocomplete="current-password" required></label>
+      <button type="submit">Entrar</button>
+      <button type="button" id="bReset" class="sec">Olvidé mi contraseña</button>
+      <div id="mLogin" class="msg"></div>
+    </form>
+  </section>
+
+  <!-- Elegir contraseña (invitación / recuperación) -->
+  <section id="vSetPass" class="login" hidden>
+    <h1 style="margin-bottom:12px">Elige tu contraseña</h1>
+    <form id="fSetPass" class="card">
+      <label>Nueva contraseña (mínimo 10 caracteres)<input id="np1" type="password" autocomplete="new-password" minlength="10" required></label>
+      <label>Repite la contraseña<input id="np2" type="password" autocomplete="new-password" minlength="10" required></label>
+      <button type="submit">Guardar y entrar</button>
+      <div id="mSet" class="msg"></div>
+    </form>
+  </section>
+
+  <!-- Tablero -->
+  <section id="vApp" hidden>
+    <header class="top">
+      <h1>Dashboard GrupoNero</h1>
+      <div class="who"><span id="who"></span><button id="bOut" type="button">Salir</button></div>
+    </header>
+
+    <div class="filters">
+      <label>Año<select id="fAnio"></select></label>
+      <label>Sucursal<select id="fSuc"></select></label>
+    </div>
+
+    <div id="mApp" class="msg"></div>
+
+    <div class="kpis">
+      <div class="card kpi"><div class="l">Venta total</div><div class="v" id="kVenta">–</div></div>
+      <div class="card kpi"><div class="l">Promedio por día-sucursal</div><div class="v" id="kProm">–</div></div>
+      <div class="card kpi"><div class="l">Plataformas (Rappi, Uber, Didi)</div><div class="v" id="kPlat">–</div></div>
+      <div class="card kpi"><div class="l">Tarjeta</div><div class="v" id="kTarj">–</div></div>
+    </div>
+
+    <div class="grid">
+      <div class="card full"><h2>Venta mensual por año (comparativo)</h2><div class="ch"><canvas id="cMes"></canvas></div></div>
+      <div class="card"><h2 id="tSuc">Venta por sucursal</h2><div class="ch"><canvas id="cSuc"></canvas></div></div>
+      <div class="card"><h2>Venta promedio por día de la semana</h2><div class="ch"><canvas id="cDia"></canvas></div></div>
+    </div>
+    <p class="note">Fuente: hojas DBGlobal 2020–2026 consolidadas en Supabase. Cifras en pesos.</p>
+  </section>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+const SB_URL = 'https://yanclbucxzebeeqyxhxm.supabase.co';
+const SB_KEY = 'sb_publishable_JQ6z_lKISi8nK3EPSzR4eg_ftYfHsO3'; // clave pública; la seguridad la da RLS
+
+// Se lee antes de crear el cliente (que limpia el hash)
+const hashParams = new URLSearchParams(location.hash.replace(/^#/, ''));
+const hashType = hashParams.get('type');
+const hashError = hashParams.get('error_description');
+
+const sb = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+const $ = id => document.getElementById(id);
+const show = id => { ['vLogin','vSetPass','vApp'].forEach(v => $(v).hidden = v !== id); };
+const mxn = n => '$' + Math.round(n).toLocaleString('es-MX');
+const MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const DIAS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const COLORS = ['#b5381f','#1f6f8b','#c9972b','#2d7a4f','#7a4f9a','#8a8a82','#d2691e'];
+let needSetPass = (hashType === 'invite' || hashType === 'recovery');
+let mensual = [], dias = [], sucs = [], charts = {};
+
+function msg(el, text, cls) { el.textContent = text || ''; el.className = 'msg ' + (cls || ''); }
+
+async function fetchAll(table, select, order) {
+  const out = [], page = 1000;
+  for (let from = 0; ; from += page) {
+    let q = sb.from(table).select(select).range(from, from + page - 1);
+    if (order) q = q.order(order);
+    const { data, error } = await q;
+    if (error) throw error;
+    out.push(...data);
+    if (data.length < page) break;
+  }
+  return out;
+}
+
+async function init() {
+  if (hashError) { show('vLogin'); msg($('mLogin'), 'El enlace no es válido o ya expiró. Usa "Olvidé mi contraseña" para recibir uno nuevo.', 'err'); return; }
+  const { data: { session } } = await sb.auth.getSession();
+  if (session && needSetPass) { show('vSetPass'); return; }
+  if (session) { await enter(session); return; }
+  show('vLogin');
+}
+
+sb.auth.onAuthStateChange(async (ev, session) => {
+  if (ev === 'PASSWORD_RECOVERY') { needSetPass = true; show('vSetPass'); }
+  else if (ev === 'SIGNED_OUT') { show('vLogin'); }
+});
+
+$('fLogin').addEventListener('submit', async e => {
+  e.preventDefault();
+  msg($('mLogin'), 'Entrando…');
+  const { data, error } = await sb.auth.signInWithPassword({ email: $('email').value.trim(), password: $('pass').value });
+  if (error) { msg($('mLogin'), 'Correo o contraseña incorrectos.', 'err'); return; }
+  $('pass').value = '';
+  await enter(data.session);
+});
+
+$('bReset').addEventListener('click', async () => {
+  const email = $('email').value.trim();
+  if (!email) { msg($('mLogin'), 'Escribe tu correo y vuelve a pulsar.', 'err'); return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+  msg($('mLogin'), error ? 'No se pudo enviar el correo. Intenta más tarde.' : 'Si el correo está registrado, recibirás un enlace.', error ? 'err' : 'okm');
+});
+
+$('fSetPass').addEventListener('submit', async e => {
+  e.preventDefault();
+  if ($('np1').value !== $('np2').value) { msg($('mSet'), 'Las contraseñas no coinciden.', 'err'); return; }
+  const { error } = await sb.auth.updateUser({ password: $('np1').value });
+  if (error) { msg($('mSet'), error.message, 'err'); return; }
+  history.replaceState(null, '', location.pathname);
+  needSetPass = false;
+  const { data: { session } } = await sb.auth.getSession();
+  await enter(session);
+});
+
+$('bOut').addEventListener('click', async () => { await sb.auth.signOut(); location.replace(location.pathname); });
+
+async function enter(session) {
+  show('vApp');
+  $('who').textContent = session.user.email;
+  msg($('mApp'), 'Cargando datos…');
+  try {
+    [sucs, mensual, dias] = await Promise.all([
+      fetchAll('sucursales', 'id,nombre', 'nombre'),
+      fetchAll('v_ventas_mensual', 'mes,sucursal_id,sucursal,dias,plataformas,tarjeta,venta_total', 'mes'),
+      fetchAll('v_ventas_dia_semana', 'anio,dia_semana,sucursal_id,dias,venta_total')
+    ]);
+  } catch (err) { msg($('mApp'), 'No se pudieron cargar los datos: ' + err.message, 'err'); return; }
+  msg($('mApp'), '');
+  const anios = [...new Set(mensual.map(r => +r.mes.slice(0, 4)))].sort((a, b) => b - a);
+  $('fAnio').innerHTML = anios.map(a => `<option>${a}</option>`).join('');
+  $('fSuc').innerHTML = '<option value="">Todas</option>' + sucs.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
+  $('fAnio').onchange = $('fSuc').onchange = render;
+  render();
+}
+
+function chart(id, cfg) {
+  if (charts[id]) charts[id].destroy();
+  const cs = getComputedStyle(document.documentElement);
+  Chart.defaults.color = cs.getPropertyValue('--mut').trim();
+  Chart.defaults.borderColor = cs.getPropertyValue('--line').trim();
+  charts[id] = new Chart($(id), cfg);
+}
+const tick = v => v >= 1e6 ? (v / 1e6).toFixed(1) + ' M' : v >= 1e3 ? (v / 1e3).toFixed(0) + ' k' : v;
+const opts = { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { callbacks: { label: c => ` ${c.dataset.label ? c.dataset.label + ': ' : ''}${mxn(c.parsed.y ?? c.parsed.x)}` } } } };
+
+function render() {
+  const anio = +$('fAnio').value, suc = $('fSuc').value ? +$('fSuc').value : null;
+  const fs = r => suc === null || r.sucursal_id === suc;
+
+  // KPIs del año
+  const del = mensual.filter(r => +r.mes.slice(0, 4) === anio && fs(r));
+  const sum = k => del.reduce((a, r) => a + (+r[k] || 0), 0);
+  const vt = sum('venta_total'), dd = sum('dias');
+  $('kVenta').textContent = mxn(vt);
+  $('kProm').textContent = dd ? mxn(vt / dd) : '–';
+  $('kPlat').textContent = vt ? (100 * sum('plataformas') / vt).toFixed(1) + ' %' : '–';
+  $('kTarj').textContent = vt ? (100 * sum('tarjeta') / vt).toFixed(1) + ' %' : '–';
+
+  // Mensual por año
+  const years = [...new Set(mensual.map(r => +r.mes.slice(0, 4)))].sort();
+  const ds = years.map((y, i) => {
+    const arr = Array(12).fill(null);
+    mensual.filter(r => +r.mes.slice(0, 4) === y && fs(r)).forEach(r => { const m = +r.mes.slice(5, 7) - 1; arr[m] = (arr[m] || 0) + (+r.venta_total || 0); });
+    return { label: String(y), data: arr, borderColor: COLORS[i % COLORS.length], backgroundColor: COLORS[i % COLORS.length], borderWidth: y === anio ? 3 : 1.5, pointRadius: y === anio ? 3 : 0, tension: .25, spanGaps: false };
+  });
+  chart('cMes', { type: 'line', data: { labels: MESES, datasets: ds }, options: { ...opts, scales: { y: { ticks: { callback: tick } } } } });
+
+  // Por sucursal (año)
+  const porSuc = {};
+  mensual.filter(r => +r.mes.slice(0, 4) === anio).forEach(r => porSuc[r.sucursal] = (porSuc[r.sucursal] || 0) + (+r.venta_total || 0));
+  const orden = Object.entries(porSuc).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  $('tSuc').textContent = 'Venta por sucursal · ' + anio;
+  chart('cSuc', { type: 'bar', data: { labels: orden.map(o => o[0]), datasets: [{ data: orden.map(o => o[1]), backgroundColor: '#1f6f8b' }] }, options: { ...opts, indexAxis: 'y', plugins: { legend: { display: false }, tooltip: opts.plugins.tooltip }, scales: { x: { ticks: { callback: tick } } } } });
+
+  // Día de la semana (año)
+  const acc = Array.from({ length: 7 }, () => ({ v: 0, d: 0 }));
+  dias.filter(r => r.anio === anio && fs(r)).forEach(r => { acc[r.dia_semana - 1].v += +r.venta_total || 0; acc[r.dia_semana - 1].d += +r.dias || 0; });
+  chart('cDia', { type: 'bar', data: { labels: DIAS, datasets: [{ data: acc.map(a => a.d ? a.v / a.d : 0), backgroundColor: '#b5381f' }] }, options: { ...opts, plugins: { legend: { display: false }, tooltip: opts.plugins.tooltip }, scales: { y: { ticks: { callback: tick } } } } });
+}
+
+init();
+</script>
+</body>
+</html>
