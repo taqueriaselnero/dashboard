@@ -83,8 +83,8 @@ header.top .who button{background:transparent;color:var(--mut);border:1px solid 
     <div class="kpis">
       <div class="card kpi"><div class="l">Venta total</div><div class="v" id="kVenta">–</div></div>
       <div class="card kpi"><div class="l">Promedio por día-sucursal</div><div class="v" id="kProm">–</div></div>
-      <div class="card kpi"><div class="l">Plataformas (Rappi, Uber, Didi)</div><div class="v" id="kPlat">–</div></div>
-      <div class="card kpi"><div class="l">Tarjeta</div><div class="v" id="kTarj">–</div></div>
+      <div class="card kpi"><div class="l">Mejor mes</div><div class="v" id="kMejor">–</div></div>
+      <div class="card kpi"><div class="l">Sucursales con venta</div><div class="v" id="kN">–</div></div>
     </div>
 
     <div class="grid">
@@ -182,7 +182,7 @@ async function enter(session) {
   try {
     [sucs, mensual, dias] = await Promise.all([
       fetchAll('sucursales', 'id,nombre', 'nombre'),
-      fetchAll('v_ventas_mensual', 'mes,sucursal_id,sucursal,dias,plataformas,tarjeta,venta_total', 'mes'),
+      fetchAll('v_ventas_mensual', 'mes,sucursal_id,sucursal,dias,venta_total', 'mes'),
       fetchAll('v_ventas_dia_semana', 'anio,dia_semana,sucursal_id,dias,venta_total')
     ]);
   } catch (err) { msg($('mApp'), 'No se pudieron cargar los datos: ' + err.message, 'err'); return; }
@@ -214,8 +214,11 @@ function render() {
   const vt = sum('venta_total'), dd = sum('dias');
   $('kVenta').textContent = mxn(vt);
   $('kProm').textContent = dd ? mxn(vt / dd) : '–';
-  $('kPlat').textContent = vt ? (100 * sum('plataformas') / vt).toFixed(1) + ' %' : '–';
-  $('kTarj').textContent = vt ? (100 * sum('tarjeta') / vt).toFixed(1) + ' %' : '–';
+  const porMes = {};
+  del.forEach(r => { const m = +r.mes.slice(5, 7) - 1; porMes[m] = (porMes[m] || 0) + (+r.venta_total || 0); });
+  const mejor = Object.entries(porMes).sort((a, b) => b[1] - a[1])[0];
+  $('kMejor').textContent = mejor ? MESES[mejor[0]] + ' · ' + mxn(mejor[1]) : '–';
+  $('kN').textContent = new Set(del.filter(r => +r.venta_total > 0).map(r => r.sucursal_id)).size;
 
   // Mensual por año
   const years = [...new Set(mensual.map(r => +r.mes.slice(0, 4)))].sort();
